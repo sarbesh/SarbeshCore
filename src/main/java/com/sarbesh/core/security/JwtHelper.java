@@ -5,7 +5,6 @@ import io.jsonwebtoken.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Component
 @RefreshScope
@@ -27,12 +25,6 @@ public class JwtHelper {
 
     @Autowired
     private JwtConfig jwtConfig;
-
-//    @Autowired
-//    public JwtHelper(JwtConfig jwtConfig) {
-//        LOGGER.debug("Init JwtHelper");
-//        this.jwtConfig = jwtConfig;
-//    }
 
     public String extractUserName(String token){
         return extractClaim(token, Claims::getSubject);

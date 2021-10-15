@@ -1,6 +1,5 @@
 package com.sarbesh.core.logging;
 
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -15,7 +14,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
@@ -30,6 +28,7 @@ public class RequestLoggingInterceptor extends OncePerRequestFilter {
     private final Logger LOGGER = LoggerFactory.getLogger(RequestLoggingInterceptor.class);
 
     public RequestLoggingInterceptor() {
+        //default constructor
     }
 
     @Override
@@ -75,7 +74,4 @@ public class RequestLoggingInterceptor extends OncePerRequestFilter {
         return "METRICS- |ResponseCode=" + response.getStatus() +
                 "|ResponseTime=" + executionTime+"|";
     }
-//    private String buildRequestMessage(HttpServletRequest request){
-//        return "|HttpMethod="+request.getMethod()+"|URI="+request.getRequestURI()+"|UUID="+request.getHeader("uuid")+"|";
-//    }
 }

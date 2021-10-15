@@ -1,6 +1,6 @@
 package com.sarbesh.core.security;
 
-import com.sarbesh.core.config.AccessPolicies;
+import com.sarbesh.core.config.AccessPolicyConfig;
 import com.sarbesh.core.dto.UserRoles;
 import com.sarbesh.core.filter.JwtRequestFilter;
 import com.sarbesh.core.filter.NetworkAccessFilter;
@@ -8,12 +8,9 @@ import com.sarbesh.core.logging.RequestLoggingInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,13 +18,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configurers.ExpressionUrlAuthorizationConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -48,7 +43,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private JwtRequestFilter jwtRequestFilter;
 
     @Autowired
-    private AccessPolicies accessPolicies;
+    private AccessPolicyConfig accessPolicyConfig;
 
     @Autowired
     private RequestLoggingInterceptor requestLoggingInterceptor;
@@ -62,6 +57,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     public WebSecurityConfig() {
+        //default constructor
     }
 
     @Override
@@ -81,6 +77,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         return super.authenticationManagerBean();
     }
 
+    @Override
     protected void configure(HttpSecurity http) throws Exception {
         LOGGER.info("Setting core WebSecurity");
         http
@@ -97,7 +94,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     private ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry applyAccessPolicies(ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry expressionInterceptUrlRegistry) {
-        accessPolicies
+        accessPolicyConfig
                 .getAccessPolicies()
                 .forEach((s, accessPolicies1) -> accessPolicies1
                         .parallelStream()

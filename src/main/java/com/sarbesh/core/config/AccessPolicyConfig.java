@@ -15,11 +15,11 @@ import java.util.Map;
 @Configuration
 @ConfigurationProperties("")
 @RefreshScope
-public class AccessPolicies implements InitializingBean {
+public class AccessPolicyConfig implements InitializingBean {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AccessPolicies.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccessPolicyConfig.class);
 
-    private Map<String, List<AccessPolicy>> accessPolicies = new HashMap<String, List<AccessPolicy>>();
+    private Map<String, List<AccessPolicy>> accessPolicies = new HashMap<>();
 
     public Map<String, List<AccessPolicy>> getAccessPolicies() {
         return accessPolicies;
@@ -29,20 +29,20 @@ public class AccessPolicies implements InitializingBean {
         this.accessPolicies = accessPolicies;
     }
 
-    public AccessPolicies() {
+    public AccessPolicyConfig() {
     }
 
-    public AccessPolicies(Map<String, List<AccessPolicy>> accessPolicies) {
+    public AccessPolicyConfig(Map<String, List<AccessPolicy>> accessPolicies) {
         this.accessPolicies = accessPolicies;
     }
 
     @Override
     public String toString() {
-        return "AccessPolicies = [" + accessPolicies + "]";
+        return "AccessPolicyConfig = [" + accessPolicies + "]";
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        LOGGER.info("#AccessPolicies: {} ",accessPolicies);
+        LOGGER.info("#AccessPolicyConfig: {} ",accessPolicies);
     }
 }
