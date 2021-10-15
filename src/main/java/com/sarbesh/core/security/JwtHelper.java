@@ -2,8 +2,11 @@ package com.sarbesh.core.security;
 
 import com.sarbesh.core.config.JwtConfig;
 import io.jsonwebtoken.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,12 +17,22 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
+@RefreshScope
 public class JwtHelper {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtHelper.class);
 
     @Autowired
     private JwtConfig jwtConfig;
+
+//    @Autowired
+//    public JwtHelper(JwtConfig jwtConfig) {
+//        LOGGER.debug("Init JwtHelper");
+//        this.jwtConfig = jwtConfig;
+//    }
 
     public String extractUserName(String token){
         return extractClaim(token, Claims::getSubject);
@@ -29,11 +42,11 @@ public class JwtHelper {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public Set<String> extractRole(String token){
+    public List<String> extractRole(String token){
         return extractClaim(token, this::getRole);
     }
 
-    public Set<SimpleGrantedAuthority> extractGrantedAuthorities(String token){
+    public Collection<? extends GrantedAuthority> extractGrantedAuthorities(String token){
         return extractRole(token).stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet());
@@ -54,17 +67,21 @@ public class JwtHelper {
 
     public String generateToken(UserDetails userDetails){
         Map<String, Object> claims = new HashMap<>();
-        claims.put(jwtConfig.getAUTHORITIES_KEY(),userDetails.getAuthorities());
+        claims.put(jwtConfig.getAUTHORITIES_KEY(),userDetails.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
         return createToken(claims, userDetails.getUsername());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
+        LOGGER.debug("generated claims: {} for {}",claims,subject);
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis()+jwtConfig.getTOKEN_VALIDITY()*1000))
-                .signWith(SignatureAlgorithm.ES512,jwtConfig.getSIGNING_KEY()).compact();
+                .setExpiration(new Date(System.currentTimeMillis()+(jwtConfig.getTOKEN_VALIDITY()*1000)))
+                .signWith(SignatureAlgorithm.HS512,jwtConfig.getSIGNING_KEY()).compact();
     }
 
     public boolean validateToken(String token, UserDetails userDetails){
@@ -74,21 +91,23 @@ public class JwtHelper {
 
     public UsernamePasswordAuthenticationToken getAuthenticationToken(String token, Authentication existingAuth, UserDetails userDetails) {
 
-        final JwtParser jwtParser = Jwts.parser().setSigningKey(jwtConfig.getSIGNING_KEY());
+        JwtParser jwtParser = Jwts.parser().setSigningKey(jwtConfig.getSIGNING_KEY());
 
-        final Jws<Claims> claimsJws = jwtParser.parseClaimsJws(token);
+        Jws<Claims> claimsJws = jwtParser.parseClaimsJws(token);
 
-        final Claims claims = claimsJws.getBody();
+        Claims claims = claimsJws.getBody();
 
-        final Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(jwtConfig.getAUTHORITIES_KEY()).toString().split(","))
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
+        Collection<? extends GrantedAuthority> authorities = getRole(claims)
+                .stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toSet());
 
         return new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
     }
 
-    private Set<String> getRole(Claims claims) {
-        return (Set<String>) claims.get(jwtConfig.getAUTHORITIES_KEY());
+    private List<String> getRole(Claims claims) {
+        List<String> collect = (List<String>) claims.get(jwtConfig.getAUTHORITIES_KEY());
+        LOGGER.debug("#JwtHelper extracted clain: {}",collect);
+        return collect;
     }
 }

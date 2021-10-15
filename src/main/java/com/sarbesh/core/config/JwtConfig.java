@@ -1,9 +1,11 @@
 package com.sarbesh.core.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@RefreshScope
 public class JwtConfig {
 
     @Value("${jwt.signingKey:mySignKey}")

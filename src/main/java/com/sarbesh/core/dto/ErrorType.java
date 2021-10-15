@@ -2,20 +2,14 @@ package com.sarbesh.core.dto;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum UserRoles {
-    VISITOR("ANONYMOUS"),
-    USER("USER"),
-    ADMIN("ADMIN");
+public enum ErrorType {
+    WARN("WARN"),
+    FATAL("FATAL"),
+    ERROR("ERROR");
 
     private String value;
 
-    UserRoles(String value) {
-        this.value = value;
-    }
-
-    public String getValue() {
-        return value;
-    }
+    ErrorType(String value) {this.value = value;}
 
     @Override
     @JsonValue
@@ -23,8 +17,8 @@ public enum UserRoles {
         return String.valueOf(value);
     }
 
-    public static UserRoles fromValue(String text){
-        for(UserRoles b : UserRoles.values()){
+    public static ErrorType fromValue(String text){
+        for(ErrorType b : ErrorType.values()){
             if(String.valueOf(b).equalsIgnoreCase(text)){
                 return b;
             }

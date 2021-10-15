@@ -5,13 +5,13 @@ import org.springframework.http.HttpMethod;
 import java.util.List;
 
 public class ApiPolicy {
-    private String url;
+    private List<String> url;
     private List<HttpMethod> httpMethod;
 
     public ApiPolicy() {
     }
 
-    public ApiPolicy(String url, List<HttpMethod> httpMethod) {
+    public ApiPolicy(List<String> url, List<HttpMethod> httpMethod) {
         this.url = url;
         this.httpMethod = httpMethod;
     }
@@ -21,11 +21,11 @@ public class ApiPolicy {
         return "url='" + url + '\'' + ", httpMethod=" + httpMethod;
     }
 
-    public String getUrl() {
+    public List<String> getUrl() {
         return url;
     }
 
-    public void setUrl(String url) {
+    public void setUrl(List<String> url) {
         this.url = url;
     }
 

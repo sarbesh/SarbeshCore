@@ -1,39 +1,81 @@
 package com.sarbesh.core.logging;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.slf4j.MarkerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class RequestLoggingInterceptor extends OncePerRequestFilter {
 
-    private final Logger logger = LoggerFactory.getLogger(RequestLoggingInterceptor.class);
+    @Value("${spring.application.name:logger}")
+    private String appName;
 
+    private final Logger LOGGER = LoggerFactory.getLogger(RequestLoggingInterceptor.class);
+
+    public RequestLoggingInterceptor() {
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        final long start = System.currentTimeMillis();
+        StopWatch stopWatch = this.preProcess(request,response);
+        filterChain.doFilter(request, response);
+        this.postProcess(response,stopWatch);
+    }
+
+    private void postProcess(HttpServletResponse response, StopWatch stopWatch) {
         try {
-            filterChain.doFilter(request, response);
-        } finally {
-            if( logger.isInfoEnabled() ) {
-                final long end = System.currentTimeMillis();
-                logger.info(buildMessage(request, end - start));
-            }
+            stopWatch.stop();
+            LOGGER.info(MarkerFactory.getMarker("METRICS"), buildResponseMessage(response,stopWatch.getLastTaskTimeMillis()));
+        } catch (Exception ex){
+            LOGGER.error("Exception {} in postProcess Logging interceptor",ex.getMessage());
         }
     }
-    private String buildMessage(HttpServletRequest request, long executionTime) {
-        final StringBuilder buffer = new StringBuilder();
-        buffer.append("|").append(request.getMethod()).append("|");
-        buffer.append("|").append(request.getRequestURI()).append("|");
-        buffer.append("|ResponseTime=").append(executionTime).append("|");
-        return buffer.toString();
+
+    private StopWatch preProcess(HttpServletRequest request, HttpServletResponse response){
+        StopWatch stopWatch = null;
+        try{
+            MDC.clear();
+            MDC.put("Method",request.getMethod());
+            MDC.put("Uri",request.getRequestURI());
+            MDC.put("Query",request.getQueryString());
+            MDC.put("User-Agent",request.getHeader("User-Agent"));
+            MDC.put("Remote",request.getRemoteHost());
+            String uuid = request.getHeader("uuid");
+            if(uuid==null){
+                uuid = UUID.randomUUID().toString();
+                LOGGER.info("Request missing UUID header, created random uuid: {} to track request",uuid);
+
+            }
+            MDC.put("UUID",uuid);
+            stopWatch = new StopWatch();
+            stopWatch.start();
+        } catch (Exception ex){
+            LOGGER.error("Exception {} in preProcess Logging interceptor",ex.getMessage());
+        }
+        return stopWatch;
     }
+    private String buildResponseMessage(HttpServletResponse response, long executionTime) {
+        return "METRICS- |ResponseCode=" + response.getStatus() +
+                "|ResponseTime=" + executionTime+"|";
+    }
+//    private String buildRequestMessage(HttpServletRequest request){
+//        return "|HttpMethod="+request.getMethod()+"|URI="+request.getRequestURI()+"|UUID="+request.getHeader("uuid")+"|";
+//    }
 }
